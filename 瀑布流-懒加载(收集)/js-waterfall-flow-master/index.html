@@ -1,0 +1,234 @@
+<!--
+ * @Description: 
+ * @Author: lxd
+ * @Date: 2020-10-19 11:34:01
+ * @LastEditors: lxd
+ * @LastEditTime: 2020-10-19 16:38:41
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <style>
+    body {
+      margin: 0px;
+      padding: 20px 50px;
+    }
+
+    .wrapper {
+      position: relative;
+    }
+
+    .item {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      opacity: 0;
+
+      /* background: rgb(255, 255, 255);
+      border-radius: 0.4em;
+      box-shadow: 0.3em 0.3em 0.7em #00000015;
+      transition: border 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: rgb(250, 250, 250) 0.2em solid; */
+
+      border-radius: 10px;
+      background: #e0e0e0;
+      box-shadow: 20px 20px 60px #bebebe,
+        -20px -20px 60px #ffffff;
+    }
+
+    .item:hover {
+      border: #006fff 0.2em solid;
+
+      background: lightgrey;
+      box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 50px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 26px -18px inset;
+    }
+
+    
+  </style>
+</head>
+
+<body>
+  <div class="wrapper"></div>
+  <script>
+    const total = 500 // 假设总数据有多少条
+    const colors = [
+      '#73A0FA',
+      '#FCA157',
+      '#B7AEFA',
+      '#FD859A',
+      '#5CA9FF',
+      '#FFDC75',
+      '#6C83F2',
+      '#73DEB3',
+      '#837DC4',
+      '#81E2E5'
+    ]
+    let pageNo = 0
+    let pageSize = 20 // 一页展示多少条数据
+    let data = [] // 当前已获取的数据数组
+    const gap = 40 // 间隙大小
+    let column = 6 // 默认6列
+    let columnWidth = 0 // 每一列的宽
+    let columnArr = [] // 存放列数据的数组
+    let scrollHeight = 0 // 滚动到该位置需要加载数据
+    const parentDom = document.querySelector('.wrapper')
+
+    // 监听
+    window.onresize = onWindowResize
+    window.onscroll = onWindowScroll
+    getData()
+
+    // 异步请求数据
+    function getData() {
+      pageNo++
+      data = data.concat(
+        Array(
+          pageNo * pageSize > total
+            ? total - (pageNo - 1) * pageSize
+            : pageSize
+        )
+      )
+      console.log(data)
+      if (pageNo === 1) {
+        // 第一次加载
+        onWindowResize()
+      } else {
+        renderDivs()
+      }
+    }
+
+    // 初始化列数
+    function initColumn() {
+      columnWidth = (parentDom.clientWidth - (column - 1) * gap) / column
+      columnArr = []
+      for (let i = 0; i < column; i++) {
+        columnArr.push({
+          top: 0,
+          left: i * (columnWidth + gap)
+        })
+      }
+      renderDivs('reset')
+    }
+
+    // window的scroll事件触发方法
+    function onWindowScroll() {
+      const scrollTop = document.documentElement.scrollTop
+      if (data.length < total && scrollTop >= scrollHeight) {
+        console.log('需要加载')
+        getData()
+      }
+    }
+
+    // window的resize事件触发方法
+    function onWindowResize() {
+      const oldColumn = column
+      const w = document.documentElement.clientWidth
+      if (w > 1600) {
+        column = 6
+      } else if (w > 1200) {
+        column = 5
+      } else {
+        column = 4
+      }
+      initColumn()
+    }
+
+    // 渲染展示元素
+    function renderDivs(reset) {
+      const s = reset ? 0 : (pageNo - 1) * pageSize // 获取遍历数组的起始值
+      for (let i = s; i < data.length; i++) {
+        // 获取需要渲染在哪一列（最短的那一列）
+        const minIndex = getIndex()
+
+        // 该元素的样式名
+        const curDivClassName = `item-${i + 1}`
+
+        // 是否已存在该元素
+        const created = document.querySelector(`.${curDivClassName}`)
+        const divDom = created ? created : document.createElement('div')
+
+        // 记录已存在元素的历史宽高
+        const oldWidth = divDom.clientWidth
+        const oldHeight = divDom.clientHeight
+
+        // 获取当前元素的高  如已存在该元素则获取等比例下的高度 如不存在则随机生成一个高度数值
+        const curHeight = created
+          ? (columnWidth * oldHeight) / oldWidth
+          : Math.random() * (columnWidth * 2)
+
+        // 记录该元素需要存放的位置坐标
+        const top = columnArr[minIndex].top
+        const left = columnArr[minIndex].left
+
+        // 为该元素写入样式
+        divDom.style.width = `${columnWidth}px`
+        divDom.style.height = `${curHeight}px`
+        divDom.style.top = `${top + 100}px` // 为了有上移的动画效果
+        divDom.style.left = `${left}px`
+
+        // 重新计算该列中的top值
+        columnArr[minIndex].top = parseFloat(top + curHeight + gap)
+
+        // 需要创建该元素
+        if (!created) {
+          divDom.style.background = colors[i % 10]
+          divDom.className = `item ${curDivClassName}`
+          divDom.innerHTML = i + 1
+          parentDom.appendChild(divDom)
+          // 延迟写点动画效果
+          setTimeout(() => {
+            divDom.style.top = `${top}px`
+            divDom.style.opacity = 1
+          }, 200)
+        }
+      }
+
+      // 需要监听滚动加载数据
+      if (data.length < total) {
+        const { minVal, maxVal } = getMinMaxHeight()
+        parentDom.style.height = `${maxVal}px`
+        if (minVal < document.documentElement.clientHeight) {
+          getData()
+        } else {
+          scrollHeight = minVal - document.documentElement.clientHeight
+        }
+      }
+    }
+
+    // 获取最短那一列的索引
+    function getIndex() {
+      // 假设最小高度的值为第一个
+      let minVal = columnArr[0].top
+      let index = 0
+      for (let i = 1; i < columnArr.length; i++) {
+        if (columnArr[i].top < minVal) {
+          minVal = columnArr[i].top
+          index = i
+        }
+      }
+      return index
+    }
+
+    function getMinMaxHeight() {
+      let minVal = columnArr[0].top
+      let maxVal = columnArr[0].top
+      for (let i = 1; i < columnArr.length; i++) {
+        if (columnArr[i].top < minVal) {
+          minVal = columnArr[i].top
+        }
+        if (columnArr[i].top > minVal) {
+          maxVal = columnArr[i].top
+        }
+      }
+      return { minVal, maxVal }
+    }
+  </script>
+</body>
+
+</html>

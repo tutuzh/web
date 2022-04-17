@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .cont {
+      margin: 0 auto;
+      position: relative;
+    }
+    .box {
+      float: left;
+      padding: 6px;
+    }
+    .imgbox {
+      border: 1px solid black;
+      border-radius: 6px;
+      padding: 6px;
+    }
+    .imgbox img {
+      width: 300px;
+      height: auto;
+      display: block;
+    }
+  </style>
+  <script>
+    // OOA:瀑布流，第一行正常浮动，从后面的行使用定位
+    //     1.获取元素
+    //     2.区分出第一行和第二行
+    //     3.立即获取第一行所有的高度
+    //     4.在第二行获取最小的高度值
+    //     5.将这个高度值设置给第二行的当前元素的top
+    //     6.将这个高度值所在的索引，乘以任意一个宽度，设置给第二行的当前元素的left
+    //     7.修改最小的这个高度值，改成原本的最小值和当前元素的高度和
+    //     8.从第四步开始重复
+
+    onload = function() {
+      new Waterfall()
+    }
+
+    // 无线加载数据
+    // 1.判断是否到底
+    //   什么时候判断
+    //        onscroll的时候判断
+    //   怎么判断
+    //        页面的总高度-100 <= 页面的可视区域的高度 + 滚走的距离
+    // 2.加载数据（模拟数据）
+    //      自定义一个数组
+    // 3.渲染页面
+    //       遍历数组，拼接字符串
+    function Waterfall() {
+      // 1.获取元素
+      this.cont = document.querySelector(".cont");
+      this.box = document.querySelectorAll(".cont .box");
+      this.clientW = document.documentElement.clientWidth;
+      this.clientH = document.documentElement.clientHeight;
+      this.heightArr = [];
+      // 2.完善结构
+      this.init();
+      // 3.第一行
+      this.firstLine();
+      // 4.第二行
+      this.otherLine();
+      // 绑定事件(滚动)
+      this.addEvent();
+    }
+    Waterfall.prototype.init = function() {
+      // 计算一行最多能放几个 （也就是第一行和其他行的分界了）
+      this.maxNum = parseInt(this.clientW / this.box[0].offsetWidth);
+      this.cont.style.width = this.maxNum * this.box[0].offsetWidth + "px";
+      // console.log(this.clientW)
+    }
+    Waterfall.prototype.firstLine = function() {
+      // 5.立即获取第一行所有的高度
+      for(var i=0;i<this.maxNum;i++) {
+        this.heightArr.push(this.box[i].offsetHeight)
+      }
+    }
+    Waterfall.prototype.otherLine = function() {
+      // console.log(this.heightArr)
+      //循环：
+      for(var i=this.maxNum;i<this.box.length;i++) {
+        // 6.在第二行获取最小的高度值
+        this.min = getMin(this.heightArr);
+        // 7.将这个高度值设置给第二行的当前元素的top
+        this.minIndex = this.heightArr.indexOf(this.min);
+        // 8.将这个高度值所在的索引，乘以任意一个宽度，设置给第二行的当前元素的lef
+        // console.log(this.minIndex)
+        this.box[i].style.position = "absolute";
+        this.box[i].style.top = this.min + "px";
+        this.box[i].style.left = this.minIndex * this.box[0].offsetWidth +"px";
+        // 9.修改最小的这个高度值，改成原本的最小值和当前元素的高度和
+        this.heightArr[this.minIndex] += this.box[i].offsetHeight;
+      }
+    }
+
+    Waterfall.prototype.addEvent = function() {
+      var that = this;
+      // 滚动事件
+      onscroll = function() {
+        // 不断地判断是否到底
+        if(that.isBottom()) {
+          // 滚到底了，获取数据
+          that.res = that.getData();
+          // 渲染页面
+          that.display();
+        }
+      }
+    }
+    Waterfall.prototype.isBottom = function() {
+      // 专门用来判断是否到底
+
+      // 页面的总高度-100 <= 页面的可视区域的高度 + 滚走的距离
+      this.scrollT = document.documentElement.scrollTop;
+      this.scrollH = document.documentElement.scrollHeight;
+
+      // console.log(this.clientH,this.scrollT,this.scrollT)
+      return this.clientH + this.scrollT >= this.scrollH - 100;     
+    }
+
+    Waterfall.prototype.getData = function() {
+      // 专门用来获取数据
+      return ["images/1.jpg","images/2.jpg","images/3.jpg","images/4.jpg","images/5.jpg","images/6.jpg",
+      "images/7.jpg","images/8.jpg","images/9.jpg","images/10.jpg"]
+    }
+
+    Waterfall.prototype.display = function() {
+      // 专门用来渲染页面
+      var str = "";
+        for(var i=0;i<this.res.length;i++) {
+          str += `<div class="box">
+                    <div class="imgbox">
+                      <img src="${this.res[i]}"/>
+                    </div>
+                  </div>`
+        }
+        this.cont.innerHTML += str;
+        // 页面中的新元素插入以后，没有瀑布流效果
+        // 5-1.重新获取所有box
+        this.box = document.querySelectorAll(".cont .box");
+        // 5-2.初始化列高度数组
+        this.heightArr = [];
+        // 5-3.重新获取第一行
+        this.firstLine();
+        // 5-4.重新渲染其他行的布局
+        this.otherLine();
+    }
+    function getMin(arr) {
+      // 利用数组的截取，实现数组的深拷贝
+      var newArr = arr.slice(0);
+      // 对深拷贝之后的数组进行排序，直接返回数组的第一个数据（最小值）
+      return newArr.sort((a,b) => a-b)[0];
+    }
+  </script>
+</head>
+<body>
+  <div class="cont">
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/4.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/3.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/2.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/1.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/5.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/6.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/7.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/8.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/9.jpg"/>
+      </div>
+    </div>
+    <div class="box">
+      <div class="imgbox">
+        <img src="images/10.jpg"/>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
