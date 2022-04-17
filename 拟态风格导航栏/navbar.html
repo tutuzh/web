@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拟态风格导航栏</title>
+    <link rel="stylesheet" href="./css/navbar.css">
+</head>
+
+<body>
+    <header>
+        <div class="navbar">
+            <a href="#">
+                <div class="logo"></div>
+            </a>
+            <div class="menus">
+                <a href="#">
+                    <div class="menu"><span>菜单栏</span></div>
+                </a>
+                <a href="#">
+                    <div class="menu"><span>菜单栏</span></div>
+                </a>
+                <a href="#">
+                    <div class="menu"><span>菜单栏</span></div>
+                </a>
+                <div class="menu second_menu" onmouseover="over('.menu_childs')" onmouseout="out('.menu_childs')">
+                    <span>菜单栏></span>
+                    <div class="menu_childs">
+                        <span style="height: 30px;display: block;"></span>
+                        <a href="#">
+                            <div class="menu_child">1</div>
+                        </a>
+                        <a href="#">
+                            <div class="menu_child">2</div>
+                        </a>
+                        <a href="#">
+                            <div class="menu_child">3</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="search">
+                <input type="text" class="search_in" placeholder="键入搜索🔍">
+                <a href="#">
+                    <div class="serach_icon">
+                        <span>🔍</span>
+                    </div>
+                </a>
+            </div>
+            <div class="pro">
+
+                <div class="login">登录/注册</div>
+
+                <div class="profile" onmouseover="over('.profile_menus')" onmouseleave="out('.profile_menus')">
+                    <div class="profile_img"  style="height: 50px;width: 50px;">
+
+                    </div>
+                    <div class="profile_menus">
+                        <div style="height: 30px;"></div>
+                        <div class="profile_menu">个人信息</div>
+                        <div class="profile_menu">退出</div>
+                        <div class="profile_menu">退出</div>
+                        <div class="profile_menu">退出</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <script>
+
+        // 监听二级菜单鼠标移入移出事件，实现隐藏和显示
+        function over(evt) {
+            let show = document.querySelector(evt)
+            show.style.display = "block"
+            show.style.animation = "slide-down 0.2s ease-in"
+        }
+        function out(evt) {
+            let hidden = document.querySelector(evt)
+            hidden.style.animation = "slide-up 0.2s linear forwards"
+
+        }
+    </script>
+</body>
+
+</html>
